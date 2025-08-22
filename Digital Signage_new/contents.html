@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>縦型ロック画面風サイネージ（フェード付き）</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: black;
+      overflow: hidden;
+      font-family: "Arial", sans-serif;
+      color: white;
+    }
+
+    /* ロック画面 */
+    #lockScreen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: url('wallpaper-vertical.jpg') no-repeat center center/cover;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      opacity: 1;
+      transition: opacity 1s ease;
+    }
+
+    /* ステータスバー */
+    .status-bar {
+      width: 100%;
+      height: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 30px;
+      font-size: 24px;
+      position: absolute;
+      top: 0;
+    }
+
+    /* 時計 */
+    .time {
+      margin-top: 150px;
+      font-size: 120px;
+      font-weight: bold;
+    }
+    .date {
+      font-size: 40px;
+      margin-bottom: 70px;
+    }
+
+    /* ロック解除文字 */
+    .unlock {
+      position: absolute;
+      bottom: 180px;
+      font-size: 32px;
+      opacity: 0.7;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 0.7; }
+      50% { opacity: 0.2; }
+    }
+
+    /* ホームバー */
+    .home-bar {
+      position: absolute;
+      bottom: 50px;
+      width: 150px;
+      height: 10px;
+      background: white;
+      border-radius: 3px;
+      opacity: 0.8;
+    }
+
+    /* 動画 */
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: black;
+      display: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+
+  </style>
+</head>
+<body>
+  <!-- ロック画面 -->
+  <div id="lockScreen">
+    <div class="status-bar">
+      <div id="statusTime">9:41</div>
+      <div class="status-right">
+        <div class="battery"><div class="battery-level"></div></div>
+      </div>
+    </div>
+
+    <div class="time" id="time"></div>
+    <div class="date" id="date"></div>
+    <div class="unlock">ロック解除中...</div>
+    <div class="home-bar"></div>
+  </div>
+
+  <!-- 動画 -->
+  <video id="video" src="sample_movie.mp4"
+         playsinline muted autoplay style="display:none"></video>
+
+  <script>
+    const lock = document.getElementById("lockScreen");
+    const video = document.getElementById("video");
+    const notif = document.getElementById("notification");
+
+    // 時計更新
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("time").textContent =
+        now.getHours().toString().padStart(2,"0") + ":" +
+        now.getMinutes().toString().padStart(2,"0");
+      document.getElementById("date").textContent =
+        now.toLocaleDateString("ja-JP", { weekday:"long", month:"long", day:"numeric" });
+      document.getElementById("statusTime").textContent =
+        now.getHours() + ":" + now.getMinutes().toString().padStart(2,"0");
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+
+    // ロック解除 → 動画再生（フェード）
+    function unlockAndPlay() {
+      // ロック画面フェードアウト
+      lock.style.opacity = 0;
+      setTimeout(() => {
+        lock.style.display = "none";
+        video.style.display = "block";
+        video.style.opacity = 0;
+        video.currentTime = 0;
+        video.play();
+        // 動画フェードイン
+        setTimeout(() => { video.style.opacity = 1; }, 50);
+      }, 1000);
+    }
+
+    // 動画終了 → ロック画面フェードイン
+    video.addEventListener("ended", () => {
+      video.style.opacity = 0;
+      setTimeout(() => {
+        video.style.display = "none";
+        lock.style.display = "flex";
+        lock.style.opacity = 0;
+        setTimeout(() => { lock.style.opacity = 1; }, 50);
+        setTimeout(unlockAndPlay, 5000);
+      }, 1000);
+    });
+
+    // 初回開始
+    setTimeout(unlockAndPlay, 5000);
+  </script>
+</body>
+</html>
